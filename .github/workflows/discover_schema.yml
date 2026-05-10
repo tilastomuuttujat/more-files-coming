@@ -1,0 +1,37 @@
+name: Discover Supabase schema
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  discover:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - run: pip install pyyaml
+
+      - name: Päivitä export_selection.yaml
+        env:
+          TTT_SB_URL: ${{ secrets.TTT_SB_URL }}
+          TTT_SB_SERVICE_KEY: ${{ secrets.TTT_SB_SERVICE_KEY }}
+        run: python scripts/discover_schema.py
+
+      - name: Commit muutokset
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet export_selection.yaml; then
+            echo "Ei muutoksia."
+          else
+            git add export_selection.yaml
+            git commit -m "chore: refresh export_selection.yaml"
+            git push
+          fi
